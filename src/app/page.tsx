@@ -1,11 +1,15 @@
+// src/app/page.tsx
+
 "use client";
 
-import { Authenticated, Unauthenticated } from "convex/react";
+import { Authenticated, Unauthenticated, useMutation } from "convex/react";
 import { SignInButton, UserButton } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { CreatePollForm } from "@/components/CreatePollForm";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Doc } from "../../convex/_generated/dataModel";
 
 export default function Home() {
   return (
@@ -36,6 +40,14 @@ export default function Home() {
 
 function Content() {
   const myPolls = useQuery(api.polls.getMyPolls);
+  const deletePoll = useMutation(api.polls.deletePoll);
+  const togglePollStatus = useMutation(api.polls.togglePollStatus);
+
+  function handleDelete(pollId: Doc<"polls">["_id"]) {
+    if (window.confirm("Are you sure you want to delete this poll?")) {
+      deletePoll({ pollId });
+    }
+  }
 
   return (
     <div>
@@ -45,20 +57,51 @@ function Content() {
       </div>
 
       {myPolls === undefined && <div>Loading polls...</div>}
-      
+
       {myPolls && myPolls.length === 0 && (
         <p>You haven't created any polls yet.</p>
       )}
 
       {myPolls && myPolls.length > 0 && (
-        <ul>
+        <ul className="space-y-4">
           {myPolls.map((poll) => (
-            <Link key={poll._id} href={`/poll/${poll._id}`}>
-              <li className="border p-4 rounded mb-2 hover:bg-gray-100 cursor-pointer">
-                <h3 className="text-lg font-bold">{poll.title}</h3>
-                <p>{poll.description}</p>
-              </li>
-            </Link>
+            <li
+              key={poll._id}
+              className="border p-4 rounded flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+            >
+              <Link href={`/poll/${poll._id}`} className="flex-grow">
+                <div className="hover:underline">
+                  <h3 className="text-lg font-bold">{poll.title}</h3>
+                  <p className="text-gray-600">{poll.description}</p>
+                  <p className="text-sm mt-2">
+                    Status:{" "}
+                    <span
+                      className={`font-semibold ${
+                        poll.isActive ? "text-green-600" : "text-red-600"
+                      }`}
+                    >
+                      {poll.isActive ? "Active" : "Closed"}
+                    </span>
+                  </p>
+                </div>
+              </Link>
+              <div className="flex gap-2 self-end sm:self-center">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    togglePollStatus({ pollId: poll._id, isActive: !poll.isActive })
+                  }
+                >
+                  {poll.isActive ? "Close" : "Reopen"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => handleDelete(poll._id)}
+                >
+                  Delete
+                </Button>
+              </div>
+            </li>
           ))}
         </ul>
       )}

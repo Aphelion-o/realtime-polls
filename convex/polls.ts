@@ -47,12 +47,38 @@ export const getPoll = query({
 export const togglePollStatus = mutation({
   args: { pollId: v.id("polls"), isActive: v.boolean() },
   handler: async (ctx, args) => {
+    const user = await mustGetCurrentUser(ctx);
     const poll = await ctx.db.get(args.pollId);
     if (!poll) throw new Error("Poll not found");
+
+    // Ensure only the owner can modify the poll
+    if (poll.createdBy !== user._id) {
+      throw new Error("You are not authorized to modify this poll.");
+    }
+
     await ctx.db.patch(args.pollId, {
       isActive: args.isActive,
       updatedAt: Date.now(),
     });
+  },
+});
+
+// Delete a poll
+export const deletePoll = mutation({
+  args: { pollId: v.id("polls") },
+  handler: async (ctx, args) => {
+    const user = await mustGetCurrentUser(ctx);
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new Error("Poll not found");
+
+    // Ensure only the owner can delete the poll
+    if (poll.createdBy !== user._id) {
+      throw new Error("You are not authorized to delete this poll.");
+    }
+
+    // You might also want to delete associated questions and votes here
+    // For now, we'll just delete the poll itself
+    await ctx.db.delete(args.pollId);
   },
 });
 
