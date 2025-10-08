@@ -1,22 +1,19 @@
 "use client";
 
+import { use } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { AddQuestionForm } from "@/components/AddQuestionForm";
 import { Question } from "@/components/Question";
-import { Button } from "@/components/ui/button";
+import { ShareButton } from "@/components/ShareButton";
 
 export default function PollPage({ params }: { params: { pollId: Id<"polls"> } }) {
-  const poll = useQuery(api.polls.getPoll, { pollId: params.pollId });
+  const unwrappedParams = use(params);
+  const poll = useQuery(api.polls.getPoll, { pollId: unwrappedParams.pollId });
   const me = useQuery(api.users.currentUser);
 
   const isOwner = me && poll && me._id === poll.createdBy;
-
-  function handleShare() {
-    navigator.clipboard.writeText(window.location.href);
-    alert("Poll link copied to clipboard!");
-  }
 
   return (
     <div className="container mx-auto p-4">
@@ -31,7 +28,7 @@ export default function PollPage({ params }: { params: { pollId: Id<"polls"> } }
             </div>
             <div className="flex gap-2">
               {isOwner && <AddQuestionForm pollId={poll._id} />}
-              <Button onClick={handleShare}>Share</Button>
+              <ShareButton pollId={poll._id} />
             </div>
           </div>
 
