@@ -1,36 +1,35 @@
 "use client";
 
 import { Authenticated, Unauthenticated } from "convex/react";
-import { SignInButton, UserButton } from "@clerk/nextjs";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { CreatePollForm } from "@/components/CreatePollForm";
 import Link from "next/link";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { EditPollDialog } from "@/components/EditPollDialog";
+import { DeletePollButton } from "@/components/DeletePollButton";
+import { Hero } from "@/components/Hero";
 
 export default function Home() {
   return (
-    <div className="container mx-auto p-4">
-      <header className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Real-time Polls</h1>
-        <Authenticated>
-          <UserButton afterSignOutUrl="/" />
-        </Authenticated>
-        <Unauthenticated>
-          <SignInButton mode="modal" />
-        </Unauthenticated>
-      </header>
-      <main>
-        <Authenticated>
+    <>
+      <Authenticated>
+        <main className="container mx-auto p-4">
           <Content />
-        </Authenticated>
-        <Unauthenticated>
-          <div className="text-center">
-            <h2 className="text-xl">Welcome!</h2>
-            <p>Sign in to create and manage your polls.</p>
-          </div>
-        </Unauthenticated>
-      </main>
-    </div>
+        </main>
+      </Authenticated>
+      <Unauthenticated>
+        <Hero />
+      </Unauthenticated>
+    </>
   );
 }
 
@@ -38,29 +37,49 @@ function Content() {
   const myPolls = useQuery(api.polls.getMyPolls);
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">My Polls</h2>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">My Polls</h1>
+          <p className="text-muted-foreground">
+            Here are the polls you've created.
+          </p>
+        </div>
         <CreatePollForm />
       </div>
 
-      {myPolls === undefined && <div>Loading polls...</div>}
-      
+      <Separator />
+
+      {myPolls === undefined && (
+        <div className="text-center text-muted-foreground">Loading polls...</div>
+      )}
+
       {myPolls && myPolls.length === 0 && (
-        <p>You haven't created any polls yet.</p>
+        <div className="text-center text-muted-foreground">
+          You haven't created any polls yet.
+        </div>
       )}
 
       {myPolls && myPolls.length > 0 && (
-        <ul>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {myPolls.map((poll) => (
-            <Link key={poll._id} href={`/poll/${poll._id}`}>
-              <li className="border p-4 rounded mb-2 hover:bg-gray-100 cursor-pointer">
-                <h3 className="text-lg font-bold">{poll.title}</h3>
-                <p>{poll.description}</p>
-              </li>
-            </Link>
+            <Card key={poll._id} className="flex flex-col">
+              <Link href={`/poll/${poll._id}`} passHref className="flex-grow">
+                <CardHeader>
+                  <CardTitle className="truncate">{poll.title}</CardTitle>
+                  <CardDescription className="line-clamp-2">
+                    {poll.description}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent></CardContent>
+              </Link>
+              <CardFooter className="flex justify-end gap-2 pt-4">
+                <EditPollDialog poll={poll} />
+                <DeletePollButton pollId={poll._id} />
+              </CardFooter>
+            </Card>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

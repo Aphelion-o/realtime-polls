@@ -1,5 +1,5 @@
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { getCurrentUser, mustGetCurrentUser } from "./users";
 
 // Create a new poll
@@ -32,7 +32,7 @@ export const getPoll = query({
   args: { pollId: v.id("polls") },
   handler: async (ctx, args) => {
     const poll = await ctx.db.get(args.pollId);
-    if (!poll) throw new Error("Poll not found");
+    if (!poll) return null;
 
     const questions = await ctx.db
       .query("questions")
@@ -48,7 +48,7 @@ export const togglePollStatus = mutation({
   args: { pollId: v.id("polls"), isActive: v.boolean() },
   handler: async (ctx, args) => {
     const poll = await ctx.db.get(args.pollId);
-    if (!poll) throw new Error("Poll not found");
+    if (!poll) throw new ConvexError("Poll not found");
     await ctx.db.patch(args.pollId, {
       isActive: args.isActive,
       updatedAt: Date.now(),
@@ -69,5 +69,59 @@ export const getMyPolls = query({
       .withIndex("by_user", (q) => q.eq("createdBy", userRecord._id))
       .order("desc")
       .collect();
+  },
+});
+
+// Update a poll
+export const updatePoll = mutation({
+  args: {
+    pollId: v.id("polls"),
+    title: v.string(),
+    description: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const userRecord = await mustGetCurrentUser(ctx);
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new ConvexError("Poll not found");
+    if (poll.createdBy !== userRecord._id) throw new ConvexError("Not authorized");
+
+    await ctx.db.patch(args.pollId, {
+      title: args.title,
+      description: args.description,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+// Delete a poll
+export const deletePoll = mutation({
+  args: { pollId: v.id("polls") },
+  handler: async (ctx, args) => {
+    const userRecord = await mustGetCurrentUser(ctx);
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new ConvexError("Poll not found");
+    if (poll.createdBy !== userRecord._id) throw new ConvexError("Not authorized");
+
+    // Find all questions in the poll
+    const questions = await ctx.db
+      .query("questions")
+      .withIndex("by_poll", (q) => q.eq("pollId", args.pollId))
+      .collect();
+
+    // Delete all votes for each question
+    for (const q of questions) {
+      const votes = await ctx.db
+        .query("votes")
+        .withIndex("by_question", (v) => v.eq("questionId", q._id))
+        .collect();
+      for (const v of votes) {
+        await ctx.db.delete(v._id);
+      }
+      // Delete the question itself
+      await ctx.db.delete(q._id);
+    }
+
+    // Finally, delete the poll
+    await ctx.db.delete(args.pollId);
   },
 });

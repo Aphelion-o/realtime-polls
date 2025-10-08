@@ -6,7 +6,7 @@ import {
   QueryCtx,
 } from "./_generated/server";
 
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { Doc, Id } from "./_generated/dataModel";
 import { UserJSON } from "@clerk/backend";
 
@@ -118,6 +118,6 @@ export async function getCurrentUser(ctx: QueryCtx): Promise<Doc<"users"> | null
 
 export async function mustGetCurrentUser(ctx: QueryCtx): Promise<Doc<"users">> {
   const userRecord = await getCurrentUser(ctx);
-  if (!userRecord) throw new Error("Can't get current user");
+  if (!userRecord) throw new ConvexError("Can't get current user");
   return userRecord;
 }
