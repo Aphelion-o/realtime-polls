@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Real-time Polls',
+  title: 'Real-Time Polls',
   description: 'Create and vote on polls in real-time.',
 }
 

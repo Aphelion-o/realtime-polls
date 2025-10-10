@@ -22,9 +22,7 @@ export function ShareButton({ pollId }: { pollId: string }) {
   const handleCopy = () => {
     navigator.clipboard.writeText(url);
     setCopied(true);
-    setTimeout(() => {
-      setCopied(false);
-    }, 2000);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -32,19 +30,29 @@ export function ShareButton({ pollId }: { pollId: string }) {
       <DialogTrigger asChild>
         <Button>Share</Button>
       </DialogTrigger>
-      <DialogContent>
+
+      <DialogContent className="flex flex-col items-center justify-center gap-6 py-8 sm:py-10">
         <DialogHeader>
-          <DialogTitle>Share Poll</DialogTitle>
+          <DialogTitle className="text-center text-lg font-semibold">
+            Share Poll
+          </DialogTitle>
         </DialogHeader>
-        <div className="flex flex-col items-center gap-4">
-          {url && <QRCode value={url} />}
-          <div className="flex items-center gap-2">
-            <p className="text-sm text-muted-foreground truncate">{url}</p>
-            <Button onClick={handleCopy} size="sm">
-              {copied ? "Copied!" : "Copy"}
-            </Button>
+
+        {/* Larger QR Code with responsive padding */}
+        {url && (
+          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-md flex items-center justify-center">
+            <QRCode value={url} size={260} />
           </div>
-        </div>
+        )}
+
+        {/* Centered Copy Button */}
+        <Button
+          onClick={handleCopy}
+          variant={copied ? "secondary" : "default"}
+          className="mt-2 text-base px-6"
+        >
+          {copied ? "Copied!" : "Copy URL"}
+        </Button>
       </DialogContent>
     </Dialog>
   );

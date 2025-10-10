@@ -12,16 +12,26 @@ import { Button } from "@/components/ui/button";
 import { EditQuestionDialog } from "@/components/EditQuestionDialog";
 import { DeleteQuestionButton } from "@/components/DeleteQuestionButton";
 import { NotFound } from "@/components/NotFound";
+import { Spinner } from "@/components/ui/spinner";
+import { Separator } from "@/components/ui/separator";
 
-export default function PollPage({ params }: { params: Promise<{ pollId: Id<"polls"> }> }) {
-  const {pollId} = use(params);
-  const poll = useQuery(api.polls.getPoll, { pollId: pollId });
+export default function PollPage({
+  params,
+}: {
+  params: Promise<{ pollId: Id<"polls"> }>;
+}) {
+  const { pollId } = use(params);
+  const poll = useQuery(api.polls.getPoll, { pollId });
   const me = useQuery(api.users.currentUser);
 
   const isOwner = me && poll && me._id === poll.createdBy;
 
   if (poll === undefined) {
-    return <div className="container mx-auto p-4">Loading poll...</div>;
+    return (
+      <div className="flex h-[80vh] items-center justify-center">
+        <Spinner className="size-8" />
+      </div>
+    );
   }
 
   if (poll === null) {
@@ -29,39 +39,58 @@ export default function PollPage({ params }: { params: Promise<{ pollId: Id<"pol
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{poll.title}</h1>
-            <p className="text-lg text-gray-600">{poll.description}</p>
-          </div>
-          <div className="flex gap-2">
-            {isOwner && (
-              <Link href={`/poll/${poll._id}/showcase`} passHref>
-                <Button variant="outline">Present</Button>
-              </Link>
-            )}
-            {isOwner && <AddQuestionForm pollId={poll._id} />}
-            <ShareButton pollId={poll._id} />
-          </div>
+    <div className="container mx-auto p-4 sm:p-6 mt-10 max-w-3xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+        <div className="text-center sm:text-left space-y-1">
+          <h1 className="text-2xl sm:text-3xl font-bold">{poll.title}</h1>
+          {poll.description && (
+            <p className="text-muted-foreground text-base sm:text-lg">
+              {poll.description}
+            </p>
+          )}
         </div>
 
-        <h2 className="text-2xl font-semibold mb-3">Questions</h2>
-        {poll.questions.length === 0 && <p>No questions yet.</p>}
-        <ul>
-          {poll.questions.map((q) => (
-            <div key={q._id} className="mb-4">
-              <Question question={q} />
-              {isOwner && (
-                <div className="flex justify-end gap-2 mt-2">
-                  <EditQuestionDialog question={q} />
-                  <DeleteQuestionButton questionId={q._id} />
-                </div>
-              )}
-            </div>
-          ))}
-        </ul>
+        <div className="flex flex-wrap justify-center sm:justify-end gap-2">
+          {isOwner && (
+            <Link href={`/poll/${poll._id}/showcase`} passHref>
+              <Button variant="outline" className="w-full sm:w-auto">
+                Present
+              </Button>
+            </Link>
+          )}
+          {isOwner && <AddQuestionForm pollId={poll._id} />}
+          <ShareButton pollId={poll._id} />
+        </div>
+      </div>
+
+      <Separator className="my-6" />
+
+      {/* Questions Section */}
+      <div>
+        <h2 className="text-xl sm:text-2xl font-semibold mb-3 text-center sm:text-left">
+          Questions
+        </h2>
+
+        {poll.questions.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">
+            No questions yet.
+          </p>
+        ) : (
+          <div className="space-y-6">
+            {poll.questions.map((q) => (
+              <div key={q._id} className="pb-4 last:border-0">
+                <Question question={q} />
+                {isOwner && (
+                  <div className="flex justify-end gap-2 mt-3">
+                    <EditQuestionDialog question={q} />
+                    <DeleteQuestionButton questionId={q._id} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
