@@ -37,7 +37,6 @@ export default function PollShowcasePage({ params }: { params: Promise<{ pollId:
     <div className="min-h-screen bg-background text-foreground p-8">
       <header className="text-center mb-12">
         <h1 className="text-5xl font-bold tracking-tight">{poll.title}</h1>
-        {me?._id}
         {poll.description && <p className="text-2xl text-muted-foreground mt-2">{poll.description}</p>}
       </header>
 
