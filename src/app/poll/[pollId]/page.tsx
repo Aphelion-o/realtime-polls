@@ -13,6 +13,7 @@ import { EditQuestionDialog } from "@/components/EditQuestionDialog";
 import { DeleteQuestionButton } from "@/components/DeleteQuestionButton";
 import { NotFound } from "@/components/NotFound";
 import { Spinner } from "@/components/ui/spinner";
+import { Separator } from "@/components/ui/separator";
 
 export default function PollPage({
   params,
@@ -62,6 +63,8 @@ export default function PollPage({
           <ShareButton pollId={poll._id} />
         </div>
       </div>
+
+      <Separator className="my-6" />
 
       {/* Questions Section */}
       <div>
