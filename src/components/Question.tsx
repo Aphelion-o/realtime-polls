@@ -49,15 +49,16 @@ export function Question({ question }: { question: { _id: Id<"questions">, text:
     } catch (error) {
       const errorMessage =
         error instanceof ConvexError
-          ? 
+          ?
           error.data
-          : 
+          :
           "Unexpected error occurred";
       toast.error(errorMessage)
     }
   }
 
   const hasVoted = votedOption !== null;
+
 
   return (
     <div className="border border-border rounded-lg p-4 space-y-4">
@@ -68,6 +69,7 @@ export function Question({ question }: { question: { _id: Id<"questions">, text:
             const voteCount = votes?.[index] ?? 0;
             const percentage = totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0;
             const isMyVote = votedOption === index;
+            const isTextInsideBar = percentage === 100;
 
             return (
               <div key={index} className="relative w-full h-10 border rounded-md overflow-hidden">
@@ -77,15 +79,23 @@ export function Question({ question }: { question: { _id: Id<"questions">, text:
                     isMyVote && "bg-primary/50"
                   )}
                   style={{ width: `${percentage}%` }}
-                ></div>
+                />
                 <div className="relative z-10 flex items-center justify-between w-full h-full px-4">
-                  <span className={cn("font-medium", isMyVote && "text-primary-foreground")}>{option}</span>
-                  <span className={cn("font-bold", isMyVote && "text-primary-foreground")}>
+                  <span className={cn("font-medium", isMyVote && "text-primary-foreground")}>
+                    {option}
+                  </span>
+                  <span
+                    className={cn(
+                      "font-bold",
+                      isMyVote && isTextInsideBar ? "text-primary-foreground" : "text-foreground"
+                    )}
+                  >
                     {percentage.toFixed(0)}%
                   </span>
                 </div>
               </div>
             );
+
           }
 
           return (
