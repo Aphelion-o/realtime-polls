@@ -18,18 +18,19 @@ export default function PollResultsPage({
 
   const me = useQuery(api.users.currentUser);
   const isOwner = me && poll && me._id === poll.createdBy;
-
-  if (!isOwner) {
-    return <div className="flex justify-center items-center h-[80vh]">You cannot access this page.</div>;
-  }
-
-  if (poll === undefined) {
+  
+  if (poll === undefined || me === undefined) {
     return (
       <div className="flex h-[80vh] items-center justify-center">
         <Spinner className="size-8" />
       </div>
     );
   }
+
+  if (!isOwner) {
+    return <div className="flex justify-center items-center h-[80vh]">You cannot access this page.</div>;
+  }
+
 
   if (poll === null) {
     return <NotFound item="poll" />;
