@@ -60,7 +60,7 @@ export function Question({ question }: { question: { _id: Id<"questions">, text:
   const hasVoted = votedOption !== null;
 
   return (
-    <li className="border border-border rounded-lg p-4 space-y-4">
+    <div className="border border-border rounded-lg p-4 space-y-4">
       <p className="font-medium text-lg">{question.text}</p>
       <div className="space-y-2">
         {question.options.map((option, index) => {
@@ -96,6 +96,6 @@ export function Question({ question }: { question: { _id: Id<"questions">, text:
         })}
       </div>
       {hasVoted && <p className="text-xs text-muted-foreground text-right">{totalVotes} total votes</p>}
-    </li>
+    </div>
   );
 }

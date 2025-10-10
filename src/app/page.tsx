@@ -17,6 +17,7 @@ import { Separator } from "@/components/ui/separator";
 import { EditPollDialog } from "@/components/EditPollDialog";
 import { DeletePollButton } from "@/components/DeletePollButton";
 import { Hero } from "@/components/Hero";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function Home() {
   return (
@@ -32,17 +33,17 @@ export default function Home() {
     </>
   );
 }
-
 function Content() {
   const myPolls = useQuery(api.polls.getMyPolls);
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-10 mt-10">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight">My Polls</h1>
+          <h1 className="text-3xl font-bold tracking-tight">My Polls</h1>
           <p className="text-muted-foreground">
-            Here are the polls you've created.
+            Manage and track the polls you've created.
           </p>
         </div>
         <CreatePollForm />
@@ -50,30 +51,46 @@ function Content() {
 
       <Separator />
 
+      {/* Loading State */}
       {myPolls === undefined && (
-        <div className="text-center text-muted-foreground">Loading polls...</div>
-      )}
-
-      {myPolls && myPolls.length === 0 && (
-        <div className="text-center text-muted-foreground">
-          You haven't created any polls yet.
+        <div className="flex h-[80vh] items-center justify-center">
+          <Spinner className="size-8" />
         </div>
       )}
 
+
+      {/* Empty State */}
+      {myPolls && myPolls.length === 0 && (
+        <div className="text-center text-muted-foreground py-12">
+          <p className="text-lg font-medium">No polls yet</p>
+          <p className="mt-1 text-sm">Start by creating your first poll.</p>
+        </div>
+      )}
+
+      {/* Poll Grid */}
       {myPolls && myPolls.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {myPolls.map((poll) => (
-            <Card key={poll._id} className="flex flex-col">
+            <Card
+              key={poll._id}
+              className="group flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+            >
               <Link href={`/poll/${poll._id}`} passHref className="flex-grow">
                 <CardHeader>
-                  <CardTitle className="truncate">{poll.title}</CardTitle>
-                  <CardDescription className="line-clamp-2">
-                    {poll.description}
+                  <CardTitle className="truncate group-hover:text-foreground/90">
+                    {poll.title}
+                  </CardTitle>
+                  <CardDescription className="line-clamp-2 text-sm text-muted-foreground">
+                    {poll.description || "No description provided."}
                   </CardDescription>
                 </CardHeader>
-                <CardContent></CardContent>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground/80">
+                    Created {new Date(poll.createdAt).toLocaleDateString()}
+                  </p>
+                </CardContent>
               </Link>
-              <CardFooter className="flex justify-end gap-2 pt-4">
+              <CardFooter className="flex justify-end gap-2 border-t pt-3">
                 <EditPollDialog poll={poll} />
                 <DeletePollButton pollId={poll._id} />
               </CardFooter>

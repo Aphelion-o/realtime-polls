@@ -10,7 +10,7 @@ export function Navbar() {
     <nav className="bg-background border-b">
       <div className="container mx-auto flex items-center justify-between p-4">
         <Link href="/" className="text-xl font-bold tracking-tight">
-          Real-time Polls
+          Real-Time Polls
         </Link>
         <div className="flex items-center gap-4">
           <Authenticated>
