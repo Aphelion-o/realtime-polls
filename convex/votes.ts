@@ -14,7 +14,7 @@ export const vote = mutation({
 
     const poll = await ctx.db.get(question.pollId);
     if (!poll) throw new ConvexError("Poll not found");
-    if (!poll.isActive) throw new ConvexError("Poll is closed");
+    if (!poll.isActive) throw new ConvexError("This pole has ended");
 
     const userRecord = await getCurrentUser(ctx);
 
@@ -97,5 +97,33 @@ export const getMyVote = query({
       .unique();
 
     return existingVote;
+  },
+});
+
+// Realtime votes for a question with user info
+export const getVotesWithUsers = query({
+  args: { questionId: v.id("questions") },
+  handler: async (ctx, args) => {
+    const votes = await ctx.db
+      .query("votes")
+      .withIndex("by_question", (q) => q.eq("questionId", args.questionId))
+      .order("desc")
+      .collect();
+
+    return Promise.all(
+      votes.map(async (vote) => {
+        if (!vote.userId) {
+          return {
+            ...vote,
+            user: null,
+          };
+        }
+        const user = await ctx.db.get(vote.userId);
+        return {
+          ...vote,
+          user,
+        };
+      })
+    );
   },
 });

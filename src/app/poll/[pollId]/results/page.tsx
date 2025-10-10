@@ -1,17 +1,20 @@
 "use client";
 
+import { use } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../../../convex/_generated/api";
 import { Id } from "../../../../../convex/_generated/dataModel";
-import { QuestionResult } from "@/components/QuestionResult";
 import { NotFound } from "@/components/NotFound";
-import { use } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { ResultsCard } from "@/components/ResultsCard";
 
-export default function PollShowcasePage({ params }: { params: Promise<{ pollId: Id<"polls"> }> }) {
+export default function PollResultsPage({
+  params,
+}: {
+  params: Promise<{ pollId: Id<"polls"> }>;
+}) {
   const { pollId } = use(params);
-
-  const poll = useQuery(api.polls.getPoll, { pollId: pollId });
+  const poll = useQuery(api.polls.getPoll, { pollId });
 
   const me = useQuery(api.users.currentUser);
   const isOwner = me && poll && me._id === poll.createdBy;
@@ -33,18 +36,20 @@ export default function PollShowcasePage({ params }: { params: Promise<{ pollId:
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
-      <header className="text-center mb-12">
-        <h1 className="text-5xl font-bold tracking-tight">{poll.title}</h1>
-        {poll.description && <p className="text-2xl text-muted-foreground mt-2">{poll.description}</p>}
-      </header>
+    <div className="container mx-auto p-4 sm:p-6 mt-10 max-w-3xl">
+      <div className="text-center sm:text-left space-y-1 mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold">Results: {poll.title}</h1>
+        {poll.description && (
+          <p className="text-muted-foreground text-base sm:text-lg">
+            {poll.description}
+          </p>
+        )}
+      </div>
 
-      <div className="max-w-4xl mx-auto">
-        <ul className="space-y-10">
-          {poll.questions.map((question) => (
-            <QuestionResult key={question._id} question={question} poll={poll} />
-          ))}
-        </ul>
+      <div className="space-y-6">
+        {poll.questions.map((q) => (
+          <ResultsCard key={q._id} question={q} poll={poll} />
+        ))}
       </div>
     </div>
   );

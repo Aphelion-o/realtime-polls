@@ -3,38 +3,15 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Doc, Id } from "../../convex/_generated/dataModel";
-import { useEffect, useRef } from "react";
-import { toast } from "sonner";
 
-export function QuestionResult({
+export function ResultsCard({
   question,
-  poll,
+  poll
 }: {
-  question: { _id: Id<"questions">; text: string; options: string[] };
-  poll: Doc<"polls">;
+  question: { _id: Id<"questions">, text: string, options: string[] },
+  poll: Doc<"polls">
 }) {
-  const votes = useQuery(api.votes.getVotesWithUsers, {
-    questionId: question._id,
-  });
-
-  const processedVotes = useRef(new Set());
-
-  useEffect(() => {
-    if (votes) {
-      votes.forEach((vote) => {
-        if (!processedVotes.current.has(vote._id)) {
-          if (!poll.allowAnonymous && vote.user) {
-            const voterName =
-              vote.user.clerkUser.first_name ??
-              vote.user.clerkUser.username ??
-              "An anonymous user";
-            toast(`${voterName} voted for "${question.options[vote.optionIndex]}"`);
-          }
-          processedVotes.current.add(vote._id);
-        }
-      });
-    }
-  }, [votes, poll.allowAnonymous, question.options]);
+  const votes = useQuery(api.votes.getVotesWithUsers, { questionId: question._id });
 
   const voteCounts =
     votes?.reduce((acc, vote) => {
@@ -64,6 +41,24 @@ export function QuestionResult({
                   style={{ width: `${percentage}%` }}
                 ></div>
               </div>
+              {!poll.allowAnonymous && (
+                <div className="pt-2">
+                  {voteCount != 0 && (
+                      <>
+                        <h4 className="font-semibold">Voters:</h4>
+                        <ul className="list-disc list-inside">
+                          {votes
+                            ?.filter(v => v.optionIndex === index)
+                            .map(v => (
+                              <li key={v._id} className="text-sm text-muted-foreground">
+                                {v.user?.clerkUser.first_name ?? v.user?.clerkUser.username ?? "Anonymous"}
+                              </li>
+                            ))}
+                        </ul>
+                      </>
+                    )}
+                </div>
+              )}
             </div>
           );
         })}

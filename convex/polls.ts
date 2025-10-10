@@ -47,8 +47,11 @@ export const getPoll = query({
 export const togglePollStatus = mutation({
   args: { pollId: v.id("polls"), isActive: v.boolean() },
   handler: async (ctx, args) => {
+    const userRecord = await mustGetCurrentUser(ctx);
     const poll = await ctx.db.get(args.pollId);
     if (!poll) throw new ConvexError("Poll not found");
+    if (poll.createdBy !== userRecord._id) throw new ConvexError("Not authorized");
+
     await ctx.db.patch(args.pollId, {
       isActive: args.isActive,
       updatedAt: Date.now(),

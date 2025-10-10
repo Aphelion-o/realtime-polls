@@ -1,7 +1,7 @@
 "use client";
 
 import { use } from "react";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
 import { AddQuestionForm } from "@/components/AddQuestionForm";
@@ -23,6 +23,7 @@ export default function PollPage({
   const { pollId } = use(params);
   const poll = useQuery(api.polls.getPoll, { pollId });
   const me = useQuery(api.users.currentUser);
+  const togglePollStatus = useMutation(api.polls.togglePollStatus);
 
   const isOwner = me && poll && me._id === poll.createdBy;
 
@@ -52,6 +53,24 @@ export default function PollPage({
         </div>
 
         <div className="flex flex-wrap justify-center sm:justify-end gap-2">
+          {isOwner && (
+            <Button
+              variant="outline"
+              onClick={() =>
+                togglePollStatus({ pollId: poll._id, isActive: !poll.isActive })
+              }
+              className="w-full sm:w-auto"
+            >
+              {poll.isActive ? "End Poll" : "Restart Poll"}
+            </Button>
+          )}
+          {isOwner && (
+            <Link href={`/poll/${poll._id}/results`} passHref>
+              <Button variant="outline" className="w-full sm:w-auto">
+                Results
+              </Button>
+            </Link>
+          )}
           {isOwner && (
             <Link href={`/poll/${poll._id}/showcase`} passHref>
               <Button variant="outline" className="w-full sm:w-auto">
