@@ -22,7 +22,7 @@ export function Navbar() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   if (pathname.endsWith("/showcase")) return null;
-  if (pathname.match(/^\/poll\/[^/]+$/) && poll?.allowAnonymous && !me) return null;
+  if (pathname.match(/^\/poll\/[^/]+$/) && (poll === undefined || me === undefined || (poll?.allowAnonymous && !me))) return null;
   return (
     <nav className="bg-background border-b">
       <div className="container mx-auto flex items-center justify-between p-4">

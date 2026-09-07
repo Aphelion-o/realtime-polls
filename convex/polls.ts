@@ -22,6 +22,7 @@ export const createPoll = mutation({
       isActive: true,
       presentationQuestionIndex: undefined,
       votingEndsAt: undefined,
+      votingTimerId: undefined,
       votingRemainingMs: undefined,
       hasVotingStarted: false,
       isVotingPaused: true,
@@ -75,9 +76,11 @@ export const presentQuestion = mutation({
     if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
     const questions = await ctx.db.query("questions").withIndex("by_poll", (q) => q.eq("pollId", args.pollId)).collect();
     if (args.questionIndex < 0 || args.questionIndex >= questions.length) throw new ConvexError("Question not found");
+    if (poll.votingTimerId) await ctx.scheduler.cancel(poll.votingTimerId);
     await ctx.db.patch(args.pollId, {
       presentationQuestionIndex: args.questionIndex,
       votingEndsAt: undefined,
+      votingTimerId: undefined,
       votingRemainingMs: undefined,
       hasVotingStarted: false,
       isVotingPaused: true,
@@ -100,16 +103,18 @@ export const beginVoting = mutation({
     if (!Number.isFinite(duration) || duration <= 0) throw new ConvexError("Voting duration must be positive");
     const now = Date.now();
     const votingEndsAt = now + duration * 1000;
+    if (poll.votingTimerId) await ctx.scheduler.cancel(poll.votingTimerId);
+    const votingTimerId = await ctx.scheduler.runAt(votingEndsAt, internal.polls.finishVoting, { pollId: args.pollId, votingEndsAt });
     await ctx.db.patch(args.pollId, {
       isVotingPaused: false,
       showResults: false,
       hasVotingStarted: true,
       votingRemainingMs: undefined,
       votingEndsAt,
+      votingTimerId,
       isActive: true,
       updatedAt: now,
     });
-    await ctx.scheduler.runAt(votingEndsAt, internal.polls.finishVoting, { pollId: args.pollId, votingEndsAt });
   },
 });
 
@@ -124,9 +129,11 @@ export const pauseVoting = mutation({
       throw new ConvexError("Voting is not running");
     }
     const now = Date.now();
+    if (poll.votingTimerId) await ctx.scheduler.cancel(poll.votingTimerId);
     await ctx.db.patch(args.pollId, {
       isVotingPaused: true,
       votingEndsAt: undefined,
+      votingTimerId: undefined,
       votingRemainingMs: Math.max(0, poll.votingEndsAt - now),
       updatedAt: now,
     });
@@ -147,8 +154,11 @@ export const addVotingTime = mutation({
       ? poll.votingRemainingMs ?? 0
       : Math.max(0, (poll.votingEndsAt ?? now) - now);
     const votingEndsAt = now + remainingMs + args.seconds * 1000;
+    if (poll.votingTimerId) await ctx.scheduler.cancel(poll.votingTimerId);
+    const votingTimerId = await ctx.scheduler.runAt(votingEndsAt, internal.polls.finishVoting, { pollId: args.pollId, votingEndsAt });
     await ctx.db.patch(args.pollId, {
       votingEndsAt,
+      votingTimerId,
       votingRemainingMs: undefined,
       hasVotingStarted: true,
       isVotingPaused: false,
@@ -156,7 +166,6 @@ export const addVotingTime = mutation({
       isActive: true,
       updatedAt: now,
     });
-    await ctx.scheduler.runAt(votingEndsAt, internal.polls.finishVoting, { pollId: args.pollId, votingEndsAt });
   },
 });
 
@@ -170,7 +179,8 @@ export const revealResults = mutation({
     if (!poll.hasVotingStarted) throw new ConvexError("Start voting before showing results");
     if (poll.votingEndsAt && Date.now() < poll.votingEndsAt) throw new ConvexError("Wait until voting time has ended");
     if (poll.votingRemainingMs && poll.votingRemainingMs > 0) throw new ConvexError("Resume voting or wait until time has ended");
-    await ctx.db.patch(args.pollId, { isVotingPaused: true, votingEndsAt: undefined, votingRemainingMs: 0, showResults: true, updatedAt: Date.now() });
+    if (poll.votingTimerId) await ctx.scheduler.cancel(poll.votingTimerId);
+    await ctx.db.patch(args.pollId, { isVotingPaused: true, votingEndsAt: undefined, votingTimerId: undefined, votingRemainingMs: 0, showResults: true, updatedAt: Date.now() });
   },
 });
 
@@ -185,6 +195,7 @@ export const finishVoting = internalMutation({
     await ctx.db.patch(args.pollId, {
       isVotingPaused: true,
       votingEndsAt: undefined,
+      votingTimerId: undefined,
       votingRemainingMs: 0,
       updatedAt: Date.now(),
     });

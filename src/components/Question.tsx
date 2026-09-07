@@ -8,6 +8,9 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner"
 import { cn } from "@/lib/utils";
 import { ConvexError } from "convex/values";
+import { Check } from "lucide-react";
+
+type VotingState = "waiting" | "live" | "paused" | "ended" | "results";
 
 function getAnonSessionId() {
   if (typeof window === "undefined") return null;
@@ -19,7 +22,7 @@ function getAnonSessionId() {
   return sessionId;
 }
 
-export function Question({ question, showResults = true, audienceMode = false, votingOpen = true }: { question: { _id: Id<"questions">, text: string, options: string[] }, showResults?: boolean, audienceMode?: boolean, votingOpen?: boolean }) {
+export function Question({ question, showResults = true, audienceMode = false, votingOpen = true, votingState = "live" }: { question: { _id: Id<"questions">, text: string, options: string[] }, showResults?: boolean, audienceMode?: boolean, votingOpen?: boolean, votingState?: VotingState }) {
   const anonSessionId = getAnonSessionId();
   const myVote = useQuery(api.votes.getMyVote, {
     questionId: question._id,
@@ -62,7 +65,7 @@ export function Question({ question, showResults = true, audienceMode = false, v
 
   return (
     <div className={cn("border border-border rounded-lg p-4 space-y-4", audienceMode && "audience-question")}>
-      <p className="font-medium text-lg">{question.text}</p>
+      <h2 className="font-medium" style={audienceMode ? { fontSize: "clamp(1.65rem, 7.2vw, 2rem)", letterSpacing: "-0.03em", lineHeight: 1.06, marginBottom: "1.75rem", textWrap: "balance" } : undefined}>{question.text}</h2>
       <div className="space-y-2">
         {question.options.map((option, index) => {
           if (hasVoted && showResults) {
@@ -99,7 +102,8 @@ export function Question({ question, showResults = true, audienceMode = false, v
           }
 
           if (hasVoted) {
-            return <div key={index} className="w-full rounded-md border border-border px-4 py-3 text-muted-foreground">{option}</div>;
+            const isMyVote = votedOption === index;
+            return <div key={index} className={cn("flex min-h-14 w-full items-center justify-between gap-3 rounded-xl border px-4 py-3", isMyVote ? "text-white" : "text-[#bcaed0]")} style={audienceMode ? { background: isMyVote ? "#39205b" : "rgba(255,255,255,.055)", borderColor: isMyVote ? "#a76cff" : "rgba(234,217,255,.18)" } : undefined}><span>{option}</span>{isMyVote && <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs font-bold uppercase tracking-wide text-[#d8bcff]"><Check size={16} aria-hidden="true" /> Your vote</span>}</div>;
           }
           return (
             <Button key={index} onClick={() => handleVote(index)} disabled={!votingOpen} className={cn("w-full justify-start", audienceMode && "audience-option")} variant="outline">
@@ -108,8 +112,8 @@ export function Question({ question, showResults = true, audienceMode = false, v
           );
         })}
       </div>
-      {hasVoted && (showResults ? <p className="text-xs text-muted-foreground text-right">{totalVotes} total votes</p> : <p className="text-sm text-muted-foreground">Vote received. Results will appear when the presenter reveals them.</p>)}
-      {!hasVoted && audienceMode && !votingOpen && <p className="audience-voting-closed">Voting is not open right now.</p>}
+      {hasVoted && (showResults ? <p className="text-xs text-muted-foreground text-right">{totalVotes} total votes</p> : <p role="status" style={{ color: "#cbbcff", fontSize: "0.95rem", fontWeight: 400, letterSpacing: 0, lineHeight: 1.45, margin: "1rem 0 0" }}>{votingState === "live" ? "Vote received. Your choice is locked in." : votingState === "paused" ? "Your vote is locked in. Voting is paused." : votingState === "ended" ? "Your vote is locked in. Waiting for the presenter to reveal results." : "Your vote is locked in."}</p>)}
+      {!hasVoted && audienceMode && !votingOpen && <div role="status" style={{ color: "#cbbcff", fontSize: "0.95rem", fontWeight: 400, letterSpacing: 0, lineHeight: 1.45, marginTop: "1rem" }}>Voting is not open right now.</div>}
     </div>
   );
 }

@@ -36,8 +36,8 @@ export default function PollPage({
 
   if (poll === undefined) {
     return (
-      <div className="flex h-[80vh] items-center justify-center">
-        <Spinner className="size-8" />
+      <div className="flex min-h-screen items-center justify-center bg-[#130b22]">
+        <Spinner className="size-8 text-white" />
       </div>
     );
   }
@@ -49,6 +49,7 @@ export default function PollPage({
   const selectedQuestion = poll.presentationQuestionIndex === undefined ? null : poll.questions[poll.presentationQuestionIndex];
   const remainingSeconds = poll.votingEndsAt && now ? Math.max(0, Math.ceil((poll.votingEndsAt - now) / 1000)) : Math.ceil((poll.votingRemainingMs ?? 0) / 1000);
   const votingOpen = !!selectedQuestion && !poll.isVotingPaused && !!poll.votingEndsAt && remainingSeconds > 0;
+  const votingState = poll.showResults ? "results" : votingOpen ? "live" : poll.isVotingPaused && remainingSeconds > 0 ? "paused" : poll.hasVotingStarted ? "ended" : "waiting";
 
   return (
     <div className={isOwner ? "container mx-auto p-4 sm:p-6 mt-10 max-w-3xl" : "audience-vote-page"}>
@@ -105,7 +106,7 @@ export default function PollPage({
 
       {/* Questions Section */}
       <div>
-        {!isOwner && <div className="audience-poll-status" aria-live="polite"><div><span>{votingOpen ? "VOTING LIVE" : poll.showResults ? "RESULTS READY" : "LIVE POLL"}</span><strong>{poll.title}</strong></div><div className="audience-timer"><small>{votingOpen ? "TIME LEFT" : poll.isVotingPaused && remainingSeconds > 0 ? "PAUSED" : "WAITING"}</small><b>{String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:{String(remainingSeconds % 60).padStart(2, "0")}</b></div></div>}
+        {!isOwner && <div className="audience-poll-status" aria-live="polite"><div><span>{votingState === "live" ? "VOTING LIVE" : votingState === "paused" ? "VOTING PAUSED" : votingState === "ended" ? "VOTING ENDED" : votingState === "results" ? "RESULTS" : "LIVE POLL"}</span><strong>{poll.title}</strong></div><div className="audience-timer"><small>{votingState === "live" ? "TIME LEFT" : votingState === "paused" ? "PAUSED" : votingState === "ended" ? "ENDED" : votingState === "results" ? "COMPLETE" : "WAITING"}</small><b>{String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:{String(remainingSeconds % 60).padStart(2, "0")}</b></div></div>}
         {isOwner && <h2 className="text-xl sm:text-2xl font-semibold mb-3 text-center sm:text-left">Questions</h2>}
 
         {poll.questions.length === 0 ? (
@@ -116,7 +117,7 @@ export default function PollPage({
           <div className="space-y-6">
             {(isOwner ? poll.questions : poll.presentationQuestionIndex === undefined ? [] : [poll.questions[poll.presentationQuestionIndex]]).filter(Boolean).map((q) => (
               <div key={q._id} className="pb-4 last:border-0">
-                <Question question={q} showResults={isOwner || !!poll.showResults} audienceMode={!isOwner} votingOpen={isOwner || votingOpen} />
+                <Question question={q} showResults={isOwner || !!poll.showResults} audienceMode={!isOwner} votingOpen={isOwner || votingOpen} votingState={votingState} />
                 {isOwner && (
                   <div className="flex justify-end gap-2 mt-3">
                     <EditQuestionDialog question={q} />
