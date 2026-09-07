@@ -7,11 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Moon, Sun, Vote } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 
 export function Navbar() {
   const pathname = usePathname();
   const { resolvedTheme, setTheme } = useTheme();
-  if (pathname.includes("/showcase")) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (pathname.endsWith("/showcase")) return null;
   return (
     <nav className="bg-background border-b">
       <div className="container mx-auto flex items-center justify-between p-4">
@@ -24,7 +27,7 @@ export function Navbar() {
         </Link>
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")} aria-label="Toggle dark mode">
-            {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+            {mounted && (resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />)}
           </Button>
           <Authenticated>
             <UserButton afterSwitchSessionUrl="/" />

@@ -78,6 +78,13 @@ export default function PollPage({
               </Button>
             </Link>
           )}
+          {isOwner && (
+            <Link href={`/poll/${poll._id}/showcase/control`} passHref>
+              <Button variant="outline" className="w-full sm:w-auto">
+                Control room
+              </Button>
+            </Link>
+          )}
           {isOwner && <AddQuestionForm pollId={poll._id} />}
           <ShareButton pollId={poll._id} />
         </div>

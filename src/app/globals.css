@@ -191,6 +191,9 @@ body {
   overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 340px;
   font-family: var(--font-geist-sans), sans-serif;
 }
+.present-only { display: block; }
+.present-only .present-stage { max-width: 1400px; margin: 0 auto; }
+.control-button { border: 1px solid var(--border); background: var(--card); color: var(--foreground); padding: .9rem 1rem; border-radius: .75rem; display: flex; align-items: center; justify-content: center; gap: .55rem; font-weight: 650; cursor: pointer; }.control-button-primary { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }.control-button:disabled { opacity: .45; cursor: not-allowed; }
 .present-aurora { position: absolute; width: 72vw; height: 72vw; max-width: 1100px; max-height: 1100px; border-radius: 50%; background: radial-gradient(circle, rgb(144 67 240 / .34), transparent 65%); top: -38vw; left: -22vw; pointer-events: none; }
 .present-stage { min-height: 100vh; padding: clamp(2rem, 7vw, 7rem); display: flex; flex-direction: column; justify-content: center; position: relative; }
 .present-meta { display: flex; align-items: center; justify-content: space-between; gap: 2rem; color: #c7b7e5; font-size: .8rem; letter-spacing: .14em; font-weight: 700; }
