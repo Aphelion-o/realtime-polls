@@ -125,6 +125,7 @@ export const revealResults = mutation({
     const poll = await ctx.db.get(args.pollId);
     if (!poll) throw new ConvexError("Poll not found");
     if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
+    if (poll.votingEndsAt && Date.now() < poll.votingEndsAt) throw new ConvexError("Wait until voting time has ended");
     await ctx.db.patch(args.pollId, { isVotingPaused: true, showResults: true, updatedAt: Date.now() });
   },
 });

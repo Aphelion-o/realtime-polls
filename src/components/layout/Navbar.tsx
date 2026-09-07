@@ -8,13 +8,21 @@ import { Moon, Sun, Vote } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { Id } from "../../../convex/_generated/dataModel";
 
 export function Navbar() {
   const pathname = usePathname();
+  const params = useParams<{ pollId?: string }>();
+  const poll = useQuery(api.polls.getPoll, params.pollId ? { pollId: params.pollId as Id<"polls"> } : "skip");
+  const me = useQuery(api.users.currentUser);
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   if (pathname.endsWith("/showcase")) return null;
+  if (pathname.match(/^\/poll\/[^/]+$/) && poll?.allowAnonymous && !me) return null;
   return (
     <nav className="bg-background border-b">
       <div className="container mx-auto flex items-center justify-between p-4">

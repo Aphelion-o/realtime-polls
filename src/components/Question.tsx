@@ -19,7 +19,7 @@ function getAnonSessionId() {
   return sessionId;
 }
 
-export function Question({ question, showResults = true }: { question: { _id: Id<"questions">, text: string, options: string[] }, showResults?: boolean }) {
+export function Question({ question, showResults = true, audienceMode = false }: { question: { _id: Id<"questions">, text: string, options: string[] }, showResults?: boolean, audienceMode?: boolean }) {
   const anonSessionId = getAnonSessionId();
   const myVote = useQuery(api.votes.getMyVote, {
     questionId: question._id,
@@ -61,7 +61,7 @@ export function Question({ question, showResults = true }: { question: { _id: Id
 
 
   return (
-    <div className="border border-border rounded-lg p-4 space-y-4">
+    <div className={cn("border border-border rounded-lg p-4 space-y-4", audienceMode && "audience-question")}>
       <p className="font-medium text-lg">{question.text}</p>
       <div className="space-y-2">
         {question.options.map((option, index) => {
@@ -102,7 +102,7 @@ export function Question({ question, showResults = true }: { question: { _id: Id
             return <div key={index} className="w-full rounded-md border border-border px-4 py-3 text-muted-foreground">{option}</div>;
           }
           return (
-            <Button key={index} onClick={() => handleVote(index)} className="w-full justify-start" variant="outline">
+            <Button key={index} onClick={() => handleVote(index)} className={cn("w-full justify-start", audienceMode && "audience-option")} variant="outline">
               {option}
             </Button>
           );

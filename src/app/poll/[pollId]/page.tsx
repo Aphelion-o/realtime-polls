@@ -40,9 +40,9 @@ export default function PollPage({
   }
 
   return (
-    <div className="container mx-auto p-4 sm:p-6 mt-10 max-w-3xl">
+    <div className={isOwner ? "container mx-auto p-4 sm:p-6 mt-10 max-w-3xl" : "audience-vote-page"}>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+      {isOwner && <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
         <div className="text-center sm:text-left space-y-1">
           <h1 className="text-2xl sm:text-3xl font-bold">{poll.title}</h1>
           {poll.description && (
@@ -88,15 +88,13 @@ export default function PollPage({
           {isOwner && <AddQuestionForm pollId={poll._id} />}
           <ShareButton pollId={poll._id} />
         </div>
-      </div>
+      </div>}
 
-      <Separator className="my-6" />
+      {isOwner && <Separator className="my-6" />}
 
       {/* Questions Section */}
       <div>
-        <h2 className="text-xl sm:text-2xl font-semibold mb-3 text-center sm:text-left">
-          Questions
-        </h2>
+        {isOwner && <h2 className="text-xl sm:text-2xl font-semibold mb-3 text-center sm:text-left">Questions</h2>}
 
         {poll.questions.length === 0 ? (
           <p className="text-center text-muted-foreground py-8">
@@ -106,7 +104,7 @@ export default function PollPage({
           <div className="space-y-6">
             {(isOwner ? poll.questions : poll.presentationQuestionIndex === undefined ? [] : [poll.questions[poll.presentationQuestionIndex]]).filter(Boolean).map((q) => (
               <div key={q._id} className="pb-4 last:border-0">
-                <Question question={q} showResults={isOwner || !!poll.showResults} />
+                <Question question={q} showResults={isOwner || !!poll.showResults} audienceMode={!isOwner} />
                 {isOwner && (
                   <div className="flex justify-end gap-2 mt-3">
                     <EditQuestionDialog question={q} />
