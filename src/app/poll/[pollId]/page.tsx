@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
 import { Id } from "../../../../convex/_generated/dataModel";
@@ -24,6 +24,13 @@ export default function PollPage({
   const poll = useQuery(api.polls.getPoll, { pollId });
   const me = useQuery(api.users.currentUser);
   const togglePollStatus = useMutation(api.polls.togglePollStatus);
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+    const timer = window.setInterval(() => setNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const isOwner = me && poll && me._id === poll.createdBy;
 
@@ -38,6 +45,10 @@ export default function PollPage({
   if (poll === null) {
     return <NotFound item="poll" />;
   }
+
+  const selectedQuestion = poll.presentationQuestionIndex === undefined ? null : poll.questions[poll.presentationQuestionIndex];
+  const remainingSeconds = poll.votingEndsAt && now ? Math.max(0, Math.ceil((poll.votingEndsAt - now) / 1000)) : Math.ceil((poll.votingRemainingMs ?? 0) / 1000);
+  const votingOpen = !!selectedQuestion && !poll.isVotingPaused && !!poll.votingEndsAt && remainingSeconds > 0;
 
   return (
     <div className={isOwner ? "container mx-auto p-4 sm:p-6 mt-10 max-w-3xl" : "audience-vote-page"}>
@@ -94,6 +105,7 @@ export default function PollPage({
 
       {/* Questions Section */}
       <div>
+        {!isOwner && <div className="audience-poll-status" aria-live="polite"><div><span>{votingOpen ? "VOTING LIVE" : poll.showResults ? "RESULTS READY" : "LIVE POLL"}</span><strong>{poll.title}</strong></div><div className="audience-timer"><small>{votingOpen ? "TIME LEFT" : poll.isVotingPaused && remainingSeconds > 0 ? "PAUSED" : "WAITING"}</small><b>{String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:{String(remainingSeconds % 60).padStart(2, "0")}</b></div></div>}
         {isOwner && <h2 className="text-xl sm:text-2xl font-semibold mb-3 text-center sm:text-left">Questions</h2>}
 
         {poll.questions.length === 0 ? (
@@ -104,7 +116,7 @@ export default function PollPage({
           <div className="space-y-6">
             {(isOwner ? poll.questions : poll.presentationQuestionIndex === undefined ? [] : [poll.questions[poll.presentationQuestionIndex]]).filter(Boolean).map((q) => (
               <div key={q._id} className="pb-4 last:border-0">
-                <Question question={q} showResults={isOwner || !!poll.showResults} audienceMode={!isOwner} />
+                <Question question={q} showResults={isOwner || !!poll.showResults} audienceMode={!isOwner} votingOpen={isOwner || votingOpen} />
                 {isOwner && (
                   <div className="flex justify-end gap-2 mt-3">
                     <EditQuestionDialog question={q} />

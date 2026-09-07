@@ -15,6 +15,8 @@ export default defineSchema({
     isActive: v.boolean(),
     presentationQuestionIndex: v.optional(v.number()),
     votingEndsAt: v.optional(v.number()),
+    votingRemainingMs: v.optional(v.number()),
+    hasVotingStarted: v.optional(v.boolean()),
     isVotingPaused: v.optional(v.boolean()),
     showResults: v.optional(v.boolean()),
     allowAnonymous: v.boolean(),

@@ -19,7 +19,7 @@ function getAnonSessionId() {
   return sessionId;
 }
 
-export function Question({ question, showResults = true, audienceMode = false }: { question: { _id: Id<"questions">, text: string, options: string[] }, showResults?: boolean, audienceMode?: boolean }) {
+export function Question({ question, showResults = true, audienceMode = false, votingOpen = true }: { question: { _id: Id<"questions">, text: string, options: string[] }, showResults?: boolean, audienceMode?: boolean, votingOpen?: boolean }) {
   const anonSessionId = getAnonSessionId();
   const myVote = useQuery(api.votes.getMyVote, {
     questionId: question._id,
@@ -102,13 +102,14 @@ export function Question({ question, showResults = true, audienceMode = false }:
             return <div key={index} className="w-full rounded-md border border-border px-4 py-3 text-muted-foreground">{option}</div>;
           }
           return (
-            <Button key={index} onClick={() => handleVote(index)} className={cn("w-full justify-start", audienceMode && "audience-option")} variant="outline">
+            <Button key={index} onClick={() => handleVote(index)} disabled={!votingOpen} className={cn("w-full justify-start", audienceMode && "audience-option")} variant="outline">
               {option}
             </Button>
           );
         })}
       </div>
       {hasVoted && (showResults ? <p className="text-xs text-muted-foreground text-right">{totalVotes} total votes</p> : <p className="text-sm text-muted-foreground">Vote received. Results will appear when the presenter reveals them.</p>)}
+      {!hasVoted && audienceMode && !votingOpen && <p className="audience-voting-closed">Voting is not open right now.</p>}
     </div>
   );
 }

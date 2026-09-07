@@ -1,4 +1,5 @@
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { ConvexError, v } from "convex/values";
 import { getCurrentUser, mustGetCurrentUser } from "./users";
 
@@ -21,6 +22,8 @@ export const createPoll = mutation({
       isActive: true,
       presentationQuestionIndex: undefined,
       votingEndsAt: undefined,
+      votingRemainingMs: undefined,
+      hasVotingStarted: false,
       isVotingPaused: true,
       showResults: false,
       createdAt: now,
@@ -75,6 +78,8 @@ export const presentQuestion = mutation({
     await ctx.db.patch(args.pollId, {
       presentationQuestionIndex: args.questionIndex,
       votingEndsAt: undefined,
+      votingRemainingMs: undefined,
+      hasVotingStarted: false,
       isVotingPaused: true,
       showResults: false,
       isActive: true,
@@ -92,7 +97,19 @@ export const beginVoting = mutation({
     if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
     if (poll.presentationQuestionIndex === undefined) throw new ConvexError("Present a question first");
     const duration = args.durationSeconds ?? 30;
-    await ctx.db.patch(args.pollId, { isVotingPaused: false, showResults: false, votingEndsAt: Date.now() + duration * 1000, isActive: true, updatedAt: Date.now() });
+    if (!Number.isFinite(duration) || duration <= 0) throw new ConvexError("Voting duration must be positive");
+    const now = Date.now();
+    const votingEndsAt = now + duration * 1000;
+    await ctx.db.patch(args.pollId, {
+      isVotingPaused: false,
+      showResults: false,
+      hasVotingStarted: true,
+      votingRemainingMs: undefined,
+      votingEndsAt,
+      isActive: true,
+      updatedAt: now,
+    });
+    await ctx.scheduler.runAt(votingEndsAt, internal.polls.finishVoting, { pollId: args.pollId, votingEndsAt });
   },
 });
 
@@ -103,7 +120,16 @@ export const pauseVoting = mutation({
     const poll = await ctx.db.get(args.pollId);
     if (!poll) throw new ConvexError("Poll not found");
     if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
-    await ctx.db.patch(args.pollId, { isVotingPaused: true, updatedAt: Date.now() });
+    if (poll.presentationQuestionIndex === undefined || poll.isVotingPaused || !poll.votingEndsAt) {
+      throw new ConvexError("Voting is not running");
+    }
+    const now = Date.now();
+    await ctx.db.patch(args.pollId, {
+      isVotingPaused: true,
+      votingEndsAt: undefined,
+      votingRemainingMs: Math.max(0, poll.votingEndsAt - now),
+      updatedAt: now,
+    });
   },
 });
 
@@ -114,7 +140,23 @@ export const addVotingTime = mutation({
     const poll = await ctx.db.get(args.pollId);
     if (!poll) throw new ConvexError("Poll not found");
     if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
-    await ctx.db.patch(args.pollId, { votingEndsAt: Math.max(Date.now(), poll.votingEndsAt ?? Date.now()) + args.seconds * 1000, isVotingPaused: false, showResults: false, updatedAt: Date.now() });
+    if (poll.presentationQuestionIndex === undefined) throw new ConvexError("Present a question first");
+    if (!Number.isFinite(args.seconds) || args.seconds <= 0) throw new ConvexError("Time to add must be positive");
+    const now = Date.now();
+    const remainingMs = poll.isVotingPaused
+      ? poll.votingRemainingMs ?? 0
+      : Math.max(0, (poll.votingEndsAt ?? now) - now);
+    const votingEndsAt = now + remainingMs + args.seconds * 1000;
+    await ctx.db.patch(args.pollId, {
+      votingEndsAt,
+      votingRemainingMs: undefined,
+      hasVotingStarted: true,
+      isVotingPaused: false,
+      showResults: false,
+      isActive: true,
+      updatedAt: now,
+    });
+    await ctx.scheduler.runAt(votingEndsAt, internal.polls.finishVoting, { pollId: args.pollId, votingEndsAt });
   },
 });
 
@@ -125,8 +167,28 @@ export const revealResults = mutation({
     const poll = await ctx.db.get(args.pollId);
     if (!poll) throw new ConvexError("Poll not found");
     if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
+    if (!poll.hasVotingStarted) throw new ConvexError("Start voting before showing results");
     if (poll.votingEndsAt && Date.now() < poll.votingEndsAt) throw new ConvexError("Wait until voting time has ended");
-    await ctx.db.patch(args.pollId, { isVotingPaused: true, showResults: true, updatedAt: Date.now() });
+    if (poll.votingRemainingMs && poll.votingRemainingMs > 0) throw new ConvexError("Resume voting or wait until time has ended");
+    await ctx.db.patch(args.pollId, { isVotingPaused: true, votingEndsAt: undefined, votingRemainingMs: 0, showResults: true, updatedAt: Date.now() });
+  },
+});
+
+// A scheduled close makes the end of voting a shared server-side transition.
+// Older jobs become harmless when a presenter pauses, extends, or restarts voting.
+export const finishVoting = internalMutation({
+  args: { pollId: v.id("polls"), votingEndsAt: v.number() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll || poll.votingEndsAt !== args.votingEndsAt) return null;
+    await ctx.db.patch(args.pollId, {
+      isVotingPaused: true,
+      votingEndsAt: undefined,
+      votingRemainingMs: 0,
+      updatedAt: Date.now(),
+    });
+    return null;
   },
 });
 
