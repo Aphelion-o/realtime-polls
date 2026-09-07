@@ -19,7 +19,7 @@ function getAnonSessionId() {
   return sessionId;
 }
 
-export function Question({ question }: { question: { _id: Id<"questions">, text: string, options: string[] } }) {
+export function Question({ question, showResults = true }: { question: { _id: Id<"questions">, text: string, options: string[] }, showResults?: boolean }) {
   const anonSessionId = getAnonSessionId();
   const myVote = useQuery(api.votes.getMyVote, {
     questionId: question._id,
@@ -65,7 +65,7 @@ export function Question({ question }: { question: { _id: Id<"questions">, text:
       <p className="font-medium text-lg">{question.text}</p>
       <div className="space-y-2">
         {question.options.map((option, index) => {
-          if (hasVoted) {
+          if (hasVoted && showResults) {
             const voteCount = votes?.[index] ?? 0;
             const percentage = totalVotes > 0 ? (voteCount / totalVotes) * 100 : 0;
             const isMyVote = votedOption === index;
@@ -98,6 +98,9 @@ export function Question({ question }: { question: { _id: Id<"questions">, text:
 
           }
 
+          if (hasVoted) {
+            return <div key={index} className="w-full rounded-md border border-border px-4 py-3 text-muted-foreground">{option}</div>;
+          }
           return (
             <Button key={index} onClick={() => handleVote(index)} className="w-full justify-start" variant="outline">
               {option}
@@ -105,7 +108,7 @@ export function Question({ question }: { question: { _id: Id<"questions">, text:
           );
         })}
       </div>
-      {hasVoted && <p className="text-xs text-muted-foreground text-right">{totalVotes} total votes</p>}
+      {hasVoted && (showResults ? <p className="text-xs text-muted-foreground text-right">{totalVotes} total votes</p> : <p className="text-sm text-muted-foreground">Vote received. Results will appear when the presenter reveals them.</p>)}
     </div>
   );
 }

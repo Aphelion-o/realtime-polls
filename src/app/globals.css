@@ -4,13 +4,13 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.9789 0.0082 121.6272);
-  --foreground: oklch(0 0 0);
+  --background: oklch(0.985 0.012 305);
+  --foreground: oklch(0.22 0.04 300);
   --card: oklch(1.0000 0 0);
   --card-foreground: oklch(0 0 0);
   --popover: oklch(1.0000 0 0);
   --popover-foreground: oklch(0 0 0);
-  --primary: oklch(0.5106 0.2301 276.9656);
+  --primary: oklch(0.48 0.22 300);
   --primary-foreground: oklch(1.0000 0 0);
   --secondary: oklch(0.7038 0.1230 182.5025);
   --secondary-foreground: oklch(1.0000 0 0);
@@ -20,7 +20,7 @@
   --accent-foreground: oklch(0 0 0);
   --destructive: oklch(0.6368 0.2078 25.3313);
   --destructive-foreground: oklch(1.0000 0 0);
-  --border: oklch(0 0 0);
+  --border: oklch(0.83 0.045 300);
   --input: oklch(0.5555 0 0);
   --ring: oklch(0.7853 0.1041 274.7134);
   --chart-1: oklch(0.5106 0.2301 276.9656);
@@ -59,14 +59,14 @@
 }
 
 .dark {
-  --background: oklch(0 0 0);
-  --foreground: oklch(1.0000 0 0);
-  --card: oklch(0.2455 0.0217 257.2823);
+  --background: oklch(0.15 0.035 300);
+  --foreground: oklch(0.96 0.025 300);
+  --card: oklch(0.22 0.05 300);
   --card-foreground: oklch(1.0000 0 0);
   --popover: oklch(0.2455 0.0217 257.2823);
   --popover-foreground: oklch(1.0000 0 0);
-  --primary: oklch(0.6801 0.1583 276.9349);
-  --primary-foreground: oklch(0 0 0);
+  --primary: oklch(0.74 0.18 300);
+  --primary-foreground: oklch(0.18 0.04 300);
   --secondary: oklch(0.7845 0.1325 181.9120);
   --secondary-foreground: oklch(0 0 0);
   --muted: oklch(0.3211 0 0);
@@ -75,7 +75,7 @@
   --accent-foreground: oklch(0 0 0);
   --destructive: oklch(0.7106 0.1661 22.2162);
   --destructive-foreground: oklch(0 0 0);
-  --border: oklch(0.4459 0 0);
+  --border: oklch(0.39 0.08 300);
   --input: oklch(1.0000 0 0);
   --ring: oklch(0.6801 0.1583 276.9349);
   --chart-1: oklch(0.6801 0.1583 276.9349);
@@ -183,3 +183,30 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+::selection { background: oklch(0.68 0.19 300 / .35); }
+
+.present-mode {
+  min-height: 100vh; background: #130b22; color: #f9f5ff; position: relative;
+  overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) 340px;
+  font-family: var(--font-geist-sans), sans-serif;
+}
+.present-aurora { position: absolute; width: 72vw; height: 72vw; max-width: 1100px; max-height: 1100px; border-radius: 50%; background: radial-gradient(circle, rgb(144 67 240 / .34), transparent 65%); top: -38vw; left: -22vw; pointer-events: none; }
+.present-stage { min-height: 100vh; padding: clamp(2rem, 7vw, 7rem); display: flex; flex-direction: column; justify-content: center; position: relative; }
+.present-meta { display: flex; align-items: center; justify-content: space-between; gap: 2rem; color: #c7b7e5; font-size: .8rem; letter-spacing: .14em; font-weight: 700; }
+.present-clock { display: flex; align-items: center; gap: .8rem; letter-spacing: .1em; }
+.present-clock span { color: #cbbcff; font-size: .7rem; }
+.present-clock strong { color: #fff; font-size: 1.25rem; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.present-stage h1 { max-width: 1100px; font-size: clamp(2.6rem, 6vw, 6.5rem); letter-spacing: -.055em; line-height: .98; margin: 2.5rem 0 3.5rem; font-weight: 750; text-wrap: balance; }
+.present-options, .present-results { max-width: 920px; display: grid; gap: 1rem; }
+.present-option { display: flex; align-items: center; gap: 1.15rem; font-size: clamp(1.05rem, 1.75vw, 1.5rem); background: rgb(255 255 255 / .075); border: 1px solid rgb(234 217 255 / .18); padding: 1.15rem 1.4rem; border-radius: 14px; }
+.present-option span { color: #d7c2ff; font-size: .85rem; font-weight: 800; width: 1.5rem; }
+.present-prompt { margin-top: 2.25rem; color: #cbbcff; font-size: 1.1rem; }
+.present-results { gap: 1.5rem; }
+.result-row > div:first-child { display: flex; justify-content: space-between; font-size: 1.15rem; margin-bottom: .55rem; }.result-row b { font-variant-numeric: tabular-nums; }.result-track { height: .8rem; overflow: hidden; border-radius: 99px; background: rgb(255 255 255 / .11); }.result-track i { display: block; height: 100%; border-radius: inherit; background: #a76cff; }.present-results > p { color: #c7b7e5; }
+.present-empty { max-width: 750px; }.present-empty svg { color: #bc92ff; }.present-empty p { font-size: 1.2rem; color: #c7b7e5; }
+.present-console { position: relative; z-index: 1; padding: 2rem 1.5rem; background: #211137; border-left: 1px solid rgb(235 217 255 / .14); display: flex; flex-direction: column; gap: 1.5rem; overflow-y: auto; max-height: 100vh; }
+.console-title { display: grid; gap: .3rem; }.console-title span { color: #bca8dc; font-size: .72rem; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; }.console-title strong { font-size: 1.05rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.question-picker { display: grid; gap: .45rem; max-height: 34vh; overflow-y: auto; padding-right: .25rem; }.question-picker button { background: transparent; border: 1px solid transparent; border-radius: 10px; color: #c9bade; text-align: left; padding: .7rem; font-size: .85rem; display: flex; gap: .7rem; align-items: flex-start; }.question-picker button span { color: #9f86c7; font-weight: 800; }.question-picker button.active { color: #fff; border-color: #9b61e8; background: #39205b; }.question-picker button:hover { background: #2c1948; }
+.console-actions { display: grid; gap: .65rem; }.console-actions button, .next-question { border: 1px solid #5c3a85; background: #2d1949; color: #f7f2ff; border-radius: 10px; padding: .78rem .9rem; display: flex; align-items: center; gap: .55rem; font-weight: 650; font-size: .86rem; cursor: pointer; }.console-actions .console-primary { background: #9b5de5; color: #190a2c; border-color: #b881fa; }.console-actions button:hover:not(:disabled), .next-question:hover { filter: brightness(1.14); }.console-actions button:disabled { opacity: .36; cursor: not-allowed; }.next-question { margin-top: auto; justify-content: space-between; color: #dfcaff; }
+@media (max-width: 900px) { .present-mode { grid-template-columns: 1fr; overflow: auto; }.present-stage { min-height: 70vh; padding: 2rem 1.5rem 3rem; }.present-console { max-height: none; border-left: 0; border-top: 1px solid rgb(235 217 255 / .14); }.present-stage h1 { margin: 2rem 0; }.question-picker { max-height: 210px; } }

@@ -19,6 +19,10 @@ export const createPoll = mutation({
       allowAnonymous: args.allowAnonymous,
       createdBy: userRecord._id,
       isActive: true,
+      presentationQuestionIndex: undefined,
+      votingEndsAt: undefined,
+      isVotingPaused: true,
+      showResults: false,
       createdAt: now,
       updatedAt: now,
     });
@@ -56,6 +60,72 @@ export const togglePollStatus = mutation({
       isActive: args.isActive,
       updatedAt: Date.now(),
     });
+  },
+});
+
+export const presentQuestion = mutation({
+  args: { pollId: v.id("polls"), questionIndex: v.number() },
+  handler: async (ctx, args) => {
+    const user = await mustGetCurrentUser(ctx);
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new ConvexError("Poll not found");
+    if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
+    const questions = await ctx.db.query("questions").withIndex("by_poll", (q) => q.eq("pollId", args.pollId)).collect();
+    if (args.questionIndex < 0 || args.questionIndex >= questions.length) throw new ConvexError("Question not found");
+    await ctx.db.patch(args.pollId, {
+      presentationQuestionIndex: args.questionIndex,
+      votingEndsAt: undefined,
+      isVotingPaused: true,
+      showResults: false,
+      isActive: true,
+      updatedAt: Date.now(),
+    });
+  },
+});
+
+export const beginVoting = mutation({
+  args: { pollId: v.id("polls"), durationSeconds: v.optional(v.number()) },
+  handler: async (ctx, args) => {
+    const user = await mustGetCurrentUser(ctx);
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new ConvexError("Poll not found");
+    if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
+    if (poll.presentationQuestionIndex === undefined) throw new ConvexError("Present a question first");
+    const duration = args.durationSeconds ?? 30;
+    await ctx.db.patch(args.pollId, { isVotingPaused: false, showResults: false, votingEndsAt: Date.now() + duration * 1000, isActive: true, updatedAt: Date.now() });
+  },
+});
+
+export const pauseVoting = mutation({
+  args: { pollId: v.id("polls") },
+  handler: async (ctx, args) => {
+    const user = await mustGetCurrentUser(ctx);
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new ConvexError("Poll not found");
+    if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
+    await ctx.db.patch(args.pollId, { isVotingPaused: true, updatedAt: Date.now() });
+  },
+});
+
+export const addVotingTime = mutation({
+  args: { pollId: v.id("polls"), seconds: v.number() },
+  handler: async (ctx, args) => {
+    const user = await mustGetCurrentUser(ctx);
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new ConvexError("Poll not found");
+    if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
+    await ctx.db.patch(args.pollId, { votingEndsAt: Math.max(Date.now(), poll.votingEndsAt ?? Date.now()) + args.seconds * 1000, isVotingPaused: false, showResults: false, updatedAt: Date.now() });
+  },
+});
+
+export const revealResults = mutation({
+  args: { pollId: v.id("polls") },
+  handler: async (ctx, args) => {
+    const user = await mustGetCurrentUser(ctx);
+    const poll = await ctx.db.get(args.pollId);
+    if (!poll) throw new ConvexError("Poll not found");
+    if (poll.createdBy !== user._id) throw new ConvexError("Not authorized");
+    await ctx.db.patch(args.pollId, { isVotingPaused: true, showResults: true, updatedAt: Date.now() });
   },
 });
 

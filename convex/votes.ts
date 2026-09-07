@@ -15,6 +15,16 @@ export const vote = mutation({
     const poll = await ctx.db.get(question.pollId);
     if (!poll) throw new ConvexError("Poll not found");
     if (!poll.isActive) throw new ConvexError("This pole has ended");
+    const questions = await ctx.db
+      .query("questions")
+      .withIndex("by_poll", (q) => q.eq("pollId", question.pollId))
+      .collect();
+    if (questions[poll.presentationQuestionIndex ?? -1]?._id !== question._id) {
+      throw new ConvexError("This question is not live");
+    }
+    if (poll.isVotingPaused || !poll.votingEndsAt || Date.now() >= poll.votingEndsAt) {
+      throw new ConvexError("Voting is closed");
+    }
 
     const userRecord = await getCurrentUser(ctx);
 

@@ -97,9 +97,9 @@ export default function PollPage({
           </p>
         ) : (
           <div className="space-y-6">
-            {poll.questions.map((q) => (
+            {(isOwner ? poll.questions : poll.presentationQuestionIndex === undefined ? [] : [poll.questions[poll.presentationQuestionIndex]]).filter(Boolean).map((q) => (
               <div key={q._id} className="pb-4 last:border-0">
-                <Question question={q} />
+                <Question question={q} showResults={isOwner || !!poll.showResults} />
                 {isOwner && (
                   <div className="flex justify-end gap-2 mt-3">
                     <EditQuestionDialog question={q} />
@@ -108,6 +108,7 @@ export default function PollPage({
                 )}
               </div>
             ))}
+            {!isOwner && poll.presentationQuestionIndex === undefined && <p className="text-center text-muted-foreground py-8">The presenter will open a question shortly.</p>}
           </div>
         )}
       </div>

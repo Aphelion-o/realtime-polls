@@ -4,9 +4,14 @@ import { Authenticated, Unauthenticated } from "convex/react";
 import { SignInButton, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Vote } from "lucide-react";
+import { Moon, Sun, Vote } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 
 export function Navbar() {
+  const pathname = usePathname();
+  const { resolvedTheme, setTheme } = useTheme();
+  if (pathname.includes("/showcase")) return null;
   return (
     <nav className="bg-background border-b">
       <div className="container mx-auto flex items-center justify-between p-4">
@@ -17,7 +22,10 @@ export function Navbar() {
           <Vote className="w-6 h-6 text-primary" />
           <span>Real-Time Polls</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")} aria-label="Toggle dark mode">
+            {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
+          </Button>
           <Authenticated>
             <UserButton afterSwitchSessionUrl="/" />
           </Authenticated>
